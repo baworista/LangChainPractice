@@ -1,0 +1,6 @@
+python-dotenv
+langgraph
+langchain-core
+langgraph.checkpoint.sqlite
+langchain_openai
+tavily-python
