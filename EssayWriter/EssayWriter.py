@@ -97,12 +97,14 @@ def generation_node(state: AgentState):
     content = "\n\n".join(state['content'] or [])
     user_message = HumanMessage(
         content=f"{state['task']}\n\nHere is my plan:\n\n{state['plan']}")
+
     messages = [
         SystemMessage(
             content=WRITER_PROMPT.format(content=content)
         ),
         user_message
         ]
+
     response = model.invoke(messages)
     return {
         "draft": response.content,

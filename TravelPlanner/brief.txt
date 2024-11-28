@@ -1,0 +1,19 @@
+Okay so the intention is to find trip for user and clues how to start it(make visa if needed and other)
+
+Input will be user's: budget $, weather, activity type, nationality(to understand what about visas), date when to go and count of days of stay
+
+First node will use tool for internet search about current visa regulations: аor example where can go Ukrainians without visa today and after that with visa. Probably it will be iterational search with max 4 searches to find this info.
+
+When this info will be found, we insert it in action state and go to the node 2. Second node is an llm which takes countries and using user desired activity and budget reject those who will be too expensive or not interesting for user. If there is a critique it also must use it for its suggestions.
+
+Node 3 is just a function which uses open api to search weather on that day from first to last(somehow takes mean) an assign it to each country like dictionary name : string weather() with different info.
+
+Node 4 is an llm who takes all left countries and their weather to leave best one's.
+
+Node 5 is a critique, who will take all info and draft with suggested countries and their info(what to do there what prices is there need for visa etc) and make message of a sceptic user for each country.
+
+Node 6 is a critique researcher which will make suggestion what to look on and we return it to node. There will be max 3 iterations after which we go to the end.
+
+Problems: how to store the data, how to make critique not to change countries but less harmful - to think model about minuses, how to deal better with weather
+
+You should think about it and make suggestions.
