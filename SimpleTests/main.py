@@ -8,42 +8,47 @@ _ = load_dotenv()
 
 class AgentState(TypedDict):
     topic: str
-    FirstAgentOpinion: str
-    SecondAgentOpinion: str
+    FirstAgentMessage: str
+    SecondAgentMessage: str
     current_iteration: int
     max_iterations: int
 
 
-OPINION_PROMPT = """
+FIRST_AGENT_PROMPT = """
 You are an AI assistant which should speak with other assistant about provided topic.
 """
 
+SECOND_AGENT_PROMPT = """
+You are an AI assistant which should speak with other assistant about provided topic.
+"""
+
+model = ChatOpenAI(model="gpt-4o-mini", temperature=0.6, max_tokens=500)
 
 def first_agent(state: AgentState):
     user_message = HumanMessage(
-        content=f"Here is the topic: {state['topic']}\n\nHere is your interlocutor word:\n\n{state['SecondAgentOpinion']}")
+        content=f"Here is the topic: {state['topic']}\n\nHere is your interlocutor message:\n\n{state['SecondAgentMessage']}")
 
     messages = [
-        SystemMessage(content=OPINION_PROMPT),
+        SystemMessage(content=FIRST_AGENT_PROMPT),
         user_message,
     ]
 
-    response = ChatOpenAI(model="gpt-4o", temperature=0.6).invoke(messages)
-    return {"FirstAgentOpinion": response.content}
+    response = model.invoke(messages)
+    return {"FirstAgentMessage": response.content}
 
 
 def second_agent(state: AgentState):
     user_message = HumanMessage(
-        content=f"Here is the topic: {state['topic']}\n\nHere is your interlocutor word:\n\n{state['FirstAgentOpinion']}")
+        content=f"Here is the topic: {state['topic']}\n\nHere is your interlocutor message:\n\n{state['FirstAgentMessage']}")
 
     messages = [
-        SystemMessage(content=OPINION_PROMPT),
+        SystemMessage(content=SECOND_AGENT_PROMPT),
         user_message
     ]
 
-    response = ChatOpenAI(model="gpt-4o", temperature=0.6).invoke(messages)
+    response = model.invoke(messages)
     return {
-        "SecondAgentOpinion": response.content,
+        "SecondAgentMessage": response.content,
         "current_iteration": state.get("current_iteration", 1) + 1
     }
 
@@ -87,8 +92,8 @@ thread = {"configurable": {"thread_id": "1"}}
 
 user_input = {
     "topic": "Miami",
-    "FirstAgentOpinion": str,
-    "SecondAgentOpinion": str,
+    "FirstAgentMessage": str,
+    "SecondAgentMessage": str,
     "current_iteration": 1,
     "max_iterations": 3,
 }
@@ -96,5 +101,6 @@ user_input = {
 # Stream through the graph with the user-defined task
 for state in graph.stream(user_input, thread):
     print(state)
+    print(f"Topic: {state.get('topic')}")
 
 
