@@ -31,19 +31,83 @@ Avoid broad moral or philosophical debates and ensure your response advances the
 
 model = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=300)
 
+class AgentState(TypedDict):
+    topic: str
+    current_iteration: int
+    max_iterations: int
+    history: List[dict]  # Modified for agent-based history
 
-def truncate_history(history: List[Dict[str, str]], max_length: int = 10):
-    """
-    Truncates the conversation history to the last `max_length` exchanges.
-    """
-    return history[-max_length:]
 
+class Agent:
+    def __init__(self, model, system_prompt: str, max_history_length: int = 5):
+        """
+        Initializes the Agent class.
 
-def format_history(history: List[Dict[str, str]]) -> str:
-    """
-    Converts structured history into a readable string for the model.
-    """
-    return "\n\n".join([f"{entry['agent']}: {entry['message']}" for entry in history])
+        :param model: ChatOpenAI model or similar callable model
+        :param system_prompt: The system prompt for the agent
+        :param max_history_length: Maximum length of the conversation history
+        """
+        self.model = model
+        self.system_prompt = system_prompt
+        self.max_history_length = max_history_length
+
+    def truncate_history(self, history: List[dict]) -> List[dict]:
+        """
+        Truncate history to the last `max_history_length` entries.
+
+        :param history: Full conversation history
+        :return: Truncated conversation history
+        """
+        return history[-self.max_history_length:]
+
+    def format_history(self, history: List[dict]) -> str:
+        """
+        Format the history into a readable string for use in the prompt.
+
+        :param history: Conversation history as a list of dicts
+        :return: Formatted history string
+        """
+        return "\n\n".join([f"{entry['agent']}: {entry['message']}" for entry in history])
+
+    def generate_message(self, state: AgentState, agent_name: str) -> AgentState:
+        """
+        Generates a response based on the current state.
+
+        :param state: Current agent state
+        :param agent_name: Name of the agent generating the response
+        :return: Updated state with the agent's response
+        """
+        # Format history for the prompt
+        history_str = self.format_history(state["history"])
+
+        # Construct user message
+        user_message = HumanMessage(
+            content=f"Here is the topic: {state['topic']}\n\n"
+                    f"Here is a Conversation history:\n\n{history_str}"
+        )
+
+        # Combine system prompt and user message
+        messages = [
+            SystemMessage(content=self.system_prompt),
+            user_message,
+        ]
+
+        # Invoke the model to generate a response
+        response = self.model.invoke(messages)
+        new_message = response.content
+
+        # Append the new message to the history and truncate
+        updated_history = self.truncate_history(
+            state["history"] + [{"agent": agent_name, "message": new_message}]
+        )
+
+        # Update and return the state
+        return {
+            "topic": state["topic"],
+            "current_iteration": state["current_iteration"] + (1 if agent_name == "second_agent" else 0),
+            "max_iterations": state["max_iterations"],
+            "history": updated_history,
+        }
 
 
 def first_agent(state: AgentState):
